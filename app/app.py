@@ -1,14 +1,19 @@
-# app/app.py
-import os
-from dotenv import load_dotenv
-from app import create_app
-from app.config import DevelopmentConfig, ProductionConfig
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from config import Config
 
-load_dotenv()
+app = Flask(__name__)
+app.config.from_object(Config)
+db = SQLAlchemy(app)
 
-env = os.environ.get('ENV', 'development')
-config_class = DevelopmentConfig if env == 'development' else ProductionConfig
-app = create_app(config_class)
+# Importer les modèles ici pour éviter les références circulaires
+from models import User
+
+# Initialisation de la base de données
+with app.app_context():
+    db.create_all()
+
+# Ajouter des routes et des blueprints ici
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)
