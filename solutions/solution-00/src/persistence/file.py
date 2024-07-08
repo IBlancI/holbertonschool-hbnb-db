@@ -7,13 +7,13 @@ import json
 from src.models.base import Base
 from src.persistence.repository import Repository
 from utils.constants import FILE_STORAGE_FILENAME
-
+from typing import Any
 
 class FileRepository(Repository):
     """File Repository"""
 
     __filename = FILE_STORAGE_FILENAME
-    __data: dict[str, list] = {
+    __data: "dict[str, list]" = {
         "country": [],
         "user": [],
         "amenity": [],
@@ -60,6 +60,7 @@ class FileRepository(Repository):
             self.__data["country"] = [Country("Uruguay", "UY")]
 
             self._save_to_file()
+            return
 
         from src.models.amenity import Amenity, PlaceAmenity
         from src.models.city import City
