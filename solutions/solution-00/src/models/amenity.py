@@ -3,7 +3,7 @@ Amenity related functionality
 """
 
 from src.models.base import Base
-
+from src import db
 
 class Amenity(Base):
     """Amenity representation"""

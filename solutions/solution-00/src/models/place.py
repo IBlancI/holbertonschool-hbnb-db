@@ -5,99 +5,71 @@ Place related functionality
 from src.models.base import Base
 from src.models.city import City
 from src.models.user import User
+from src import db
 
 
 class Place(Base):
-    """Place representation"""
+    __tablename__ = 'place'
 
-    name: str
-    description: str
-    address: str
-    latitude: float
-    longitude: float
-    host_id: str
-    city_id: str
-    price_per_night: int
-    number_of_rooms: int
-    number_of_bathrooms: int
-    max_guests: int
+    name = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
+    address = db.Column(db.String, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    host_id = db.Column(db.String(36), db.ForeignKey('user.id'), nullable=False)
+    city_id = db.Column(db.String(36), db.ForeignKey('city.id'), nullable=False)
+    price_per_night = db.Column(db.Float, nullable=False)
+    number_of_rooms = db.Column(db.Integer, nullable=False)
+    number_of_bathrooms = db.Column(db.Integer, nullable=False)
+    max_guests = db.Column(db.Integer, nullable=False)
 
-    def __init__(self, data: dict | None = None, **kw) -> None:
-        """Dummy init"""
-        super().__init__(**kw)
-
-        if not data:
-            return
-
-        self.name = data.get("name", "")
-        self.description = data.get("description", "")
-        self.address = data.get("address", "")
-        self.city_id = data["city_id"]
-        self.latitude = float(data.get("latitude", 0.0))
-        self.longitude = float(data.get("longitude", 0.0))
-        self.host_id = data["host_id"]
-        self.price_per_night = int(data.get("price_per_night", 0))
-        self.number_of_rooms = int(data.get("number_of_rooms", 0))
-        self.number_of_bathrooms = int(data.get("number_of_bathrooms", 0))
-        self.max_guests = int(data.get("max_guests", 0))
-
-    def __repr__(self) -> str:
-        """Dummy repr"""
+    def __repr__(self):
         return f"<Place {self.id} ({self.name})>"
 
-    def to_dict(self) -> dict:
-        """Dictionary representation of the object"""
+    def to_dict(self):
         return {
-            "id": self.id,
             "name": self.name,
+            "id": self.id,
             "description": self.description,
-            "address": self.address,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "city_id": self.city_id,
+            "address": self.address,
             "host_id": self.host_id,
-            "price_per_night": self.price_per_night,
+            "city_id": self.city_id,
             "number_of_rooms": self.number_of_rooms,
-            "number_of_bathrooms": self.number_of_bathrooms,
+            "price_per_night": self.price_per_night,
             "max_guests": self.max_guests,
+            "number_of_bathrooms": self.number_of_bathrooms,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
 
     @staticmethod
-    def create(data: dict) -> "Place":
+    def create(place_data):
         """Create a new place"""
-        from src.persistence import repo
+        user = User.query.get(place_data["host_id"])
+        if user is None:
+            raise ValueError(f"User with ID {place_data['host_id']} not found")
 
-        user: User | None = User.get(data["host_id"])
+        city = City.query.get(place_data["city_id"])
+        if city is None:
+            raise ValueError(f"City with ID {place_data['city_id']} not found")
 
-        if not user:
-            raise ValueError(f"User with ID {data['host_id']} not found")
-
-        city: City | None = City.get(data["city_id"])
-
-        if not city:
-            raise ValueError(f"City with ID {data['city_id']} not found")
-
-        new_place = Place(data=data)
-
-        repo.save(new_place)
-
+        new_place = Place(**place_data)
+        db.session.add(new_place)
+        db.session.commit()
         return new_place
 
     @staticmethod
-    def update(place_id: str, data: dict) -> "Place | None":
+    def update(place_id, data):
         """Update an existing place"""
-        from src.persistence import repo
+        place = Place.query.get(place_id)
 
-        place: Place | None = Place.get(place_id)
-
-        if not place:
+        if place is None:
             return None
 
         for key, value in data.items():
             setattr(place, key, value)
 
-        repo.update(place)
-
+        db.session.commit()
         return place
