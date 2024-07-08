@@ -1,19 +1,27 @@
-""" Abstract base class for all models """
-
+from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from typing import Any, Optional
+from typing import Optional, Any
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+import sqlalchemy as sa
+from sqlalchemy.orm import declared_attr
+from abc import abstractmethod, ABC
+
 import uuid
-from abc import ABC, abstractmethod
 
+db = SQLAlchemy()
+Base = declarative_base()
 
-class Base(ABC):
+class BaseModel(Base, ABC):
     """
     Base Interface for all models
     """
 
-    id: str
-    created_at: datetime
-    updated_at: datetime
+    __abstract__ = True
+
+    id = sa.Column(sa.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = sa.Column(sa.DateTime, default=datetime.now, nullable=False)
+    updated_at = sa.Column(sa.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)
 
     def __init__(
         self,
@@ -40,7 +48,7 @@ class Base(ABC):
     @classmethod
     def get(cls, id) -> "Any | None":
         """
-        This is a common method to get an specific object
+        This is a common method to get a specific object
         of a class by its id
 
         If a class needs a different implementation,
@@ -51,7 +59,7 @@ class Base(ABC):
         return repo.get(cls.__name__.lower(), id)
 
     @classmethod
-    def get_all(cls) -> list["Any"]:
+    def get_all(cls) -> "list[Any]":
         """
         This is a common method to get all objects of a class
 
@@ -65,7 +73,7 @@ class Base(ABC):
     @classmethod
     def delete(cls, id) -> bool:
         """
-        This is a common method to delete an specific
+        This is a common method to delete a specific
         object of a class by its id
 
         If a class needs a different implementation,
@@ -91,5 +99,5 @@ class Base(ABC):
 
     @staticmethod
     @abstractmethod
-    def update(entity_id: str, data: dict) -> Any | None:
+    def update(entity_id: str, data: dict) -> "Any | None":
         """Updates an object of the class"""
