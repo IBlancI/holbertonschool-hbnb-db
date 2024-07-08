@@ -1,43 +1,61 @@
 """
-  Now is easy to implement the database repository. The DBRepository
-  should implement the Repository (Storage) interface and the methods defined
-  in the abstract class Storage.
-
-  The methods to implement are:
-    - get_all
-    - get
-    - save
-    - update
-    - delete
-    - reload (which can be empty)
+  This script defines the DBRepository class, which serves as a concrete implementation
+  of the abstract Repository (Storage) interface. The DBRepository class provides
+  methods for interacting with the database, including:
+    - get_all: Retrieve all records of a specific model.
+    - get: Retrieve a single record by its ID.
+    - save: Persist a new record.
+    - update: Commit changes to an existing record.
+    - delete: Remove a record.
+    - reload: (Currently not implemented)
 """
 
-from src.models.base import Base
 from src.persistence.repository import Repository
+from src.models.base import Base
+from src.models import User
+from src import db
 
 
 class DBRepository(Repository):
-    """Dummy DB repository"""
+    """Concrete implementation of the Repository interface for database operations"""
 
     def __init__(self) -> None:
-        """Not implemented"""
+        """Initialize the DBRepository with the required models"""
+        from src.models.user import User  # Import User model
+
+        # Mapping model names to their respective classes
+        self.models = {
+            "users": User
+        }
 
     def get_all(self, model_name: str) -> list:
-        """Not implemented"""
+        """Retrieve all instances of a given model"""
+        model_class = Base._decl_class_registry.get(model_name.capitalize())
+        if model_class:
+            return model_class.query.all()
         return []
 
     def get(self, model_name: str, obj_id: str) -> Base | None:
-        """Not implemented"""
+        """Retrieve a specific instance by ID"""
+        model_class = Base._decl_class_registry.get(model_name.capitalize())
+        if model_class:
+            return model_class.query.get(obj_id)
+        return None
 
     def reload(self) -> None:
-        """Not implemented"""
+        """Reload method (currently not implemented)"""
 
     def save(self, obj: Base) -> None:
-        """Not implemented"""
+        """Persist a new object to the database"""
+        db.session.add(obj)
+        db.session.commit()
 
-    def update(self, obj: Base) -> Base | None:
-        """Not implemented"""
+    def update(self, obj: Base) -> None:
+        """Commit changes to an existing object"""
+        db.session.commit()
 
     def delete(self, obj: Base) -> bool:
-        """Not implemented"""
-        return False
+        """Remove an object from the database"""
+        db.session.delete(obj)
+        db.session.commit()
+        return True
